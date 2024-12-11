@@ -1,0 +1,42 @@
+name: Cargo Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.event.repository.owner.id == github.event.sender.id
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+    # You might want to Checkout your repo first, but not mandatory
+    - name: Check Out
+      uses: actions/checkout@v4
+
+    - name: Prepare the environment
+      run: |
+        sudo apt update
+        sudo apt -y upgrade
+        sudo apt -y install rustc gcc-aarch64-linux-gnu 
+
+    - name: Building recovery
+      run: |
+        cargo build --release 
+        #cargo build --target aarch64-unknown-linux-gnu --release
+        
+    - name: List target/release directory
+      run: ls -al target/release || echo "target/release directory not found"
+      continue-on-error: true
+       
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: | 
+         target/release/RAT
+         
+        name: ${{ github.run_id }}
+        tag_name: ${{ github.run_id }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
